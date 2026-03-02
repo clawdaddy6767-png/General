@@ -123,9 +123,10 @@
     }
     .col-label { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; }
     .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .dot-pack  { background: var(--amber); box-shadow: 0 0 6px rgba(217,119,6,.5); }
-    .dot-ship  { background: var(--teal);  box-shadow: 0 0 6px rgba(8,145,178,.5); }
-    .dot-deliv { background: var(--green); box-shadow: 0 0 6px rgba(5,150,105,.5); }
+    .dot-pack    { background: var(--amber); box-shadow: 0 0 6px rgba(217,119,6,.5); }
+    .dot-ship    { background: var(--teal);  box-shadow: 0 0 6px rgba(8,145,178,.5); }
+    .dot-transit { background: #3b82f6;      box-shadow: 0 0 6px rgba(59,130,246,.5); }
+    .dot-deliv   { background: var(--green); box-shadow: 0 0 6px rgba(5,150,105,.5); }
 
     .col-count {
       font-size: 11px; font-weight: 700; padding: 2px 7px;
@@ -149,9 +150,10 @@
       content: ''; position: absolute; top: 0; left: 0;
       width: 3px; height: 100%;
     }
-    .card.packaging::before  { background: var(--amber); }
-    .card.shipping::before   { background: var(--teal); }
-    .card.delivered::before  { background: var(--green); }
+    .card.packaging::before   { background: var(--amber); }
+    .card.shipping::before    { background: var(--teal); }
+    .card.in-transit::before  { background: #3b82f6; }
+    .card.delivered::before   { background: var(--green); }
 
     .card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow); }
     .card.dragging { opacity: .45; cursor: grabbing; }
@@ -309,10 +311,11 @@
       display: inline-flex; align-items: center; gap: 5px;
       padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
     }
-    .sc-packaging { background: rgba(217,119,6,.15); color: #f59e0b; }
-    .sc-shipping  { background: rgba(8,145,178,.15);  color: #22d3ee; }
-    .sc-delivered { background: rgba(5,150,105,.15);  color: #34d399; }
-    .sc-cancelled { background: rgba(220,38,38,.15);  color: #f87171; }
+    .sc-packaging  { background: rgba(217,119,6,.15);  color: #f59e0b; }
+    .sc-shipping   { background: rgba(8,145,178,.15);  color: #22d3ee; }
+    .sc-in-transit { background: rgba(59,130,246,.15); color: #93c5fd; }
+    .sc-delivered  { background: rgba(5,150,105,.15);  color: #34d399; }
+    .sc-cancelled  { background: rgba(220,38,38,.15);  color: #f87171; }
 
     .sec-title {
       font-size: 10px; font-weight: 800; text-transform: uppercase;
@@ -728,9 +731,10 @@ function moveOrder(id, newStatus) {
   ord.status    = newStatus;
   ord.stageDate = now;
   const evts = {
-    packaging: { event:'packaged',  label:'Moved to packaging' },
-    shipping:  { event:'shipped',   label:'Marked as shipped'  },
-    delivered: { event:'delivered', label:'Marked as delivered'},
+    packaging:   { event:'packaged',    label:'Moved to packaging'   },
+    shipping:    { event:'shipped',     label:'Marked as shipped'    },
+    'in-transit':{ event:'in-transit',  label:'Marked as in transit' },
+    delivered:   { event:'delivered',   label:'Marked as delivered'  },
   };
   if (newStatus === 'packaging') ord.lastPackedAt = now;
   if (evts[newStatus]) ord.history.push({ ...evts[newStatus], ts: now });
@@ -778,9 +782,10 @@ function checkRenewals() {
 // KANBAN RENDER
 // ═══════════════════════════════════════════════════════
 const COLS = [
-  { id:'packaging', label:'Needs to be Packaged', dot:'dot-pack'  },
-  { id:'shipping',  label:'Needs to be Shipped',  dot:'dot-ship'  },
-  { id:'delivered', label:'Delivered',             dot:'dot-deliv' },
+  { id:'packaging',   label:'Needs to be Packaged', dot:'dot-pack'    },
+  { id:'shipping',    label:'Needs to be Shipped',  dot:'dot-ship'    },
+  { id:'in-transit',  label:'In Transit',           dot:'dot-transit' },
+  { id:'delivered',   label:'Delivered',            dot:'dot-deliv'   },
 ];
 
 function renderBoard() {
@@ -879,8 +884,8 @@ function openDetail(id) {
   const ord = orders.find(o => o.id === id);
   if (!ord) return;
 
-  const statusLabels = { packaging:'Needs to be Packaged', shipping:'Needs to be Shipped', delivered:'Delivered', cancelled:'Cancelled' };
-  const statusClass  = { packaging:'sc-packaging', shipping:'sc-shipping', delivered:'sc-delivered', cancelled:'sc-cancelled' };
+  const statusLabels = { packaging:'Needs to be Packaged', shipping:'Needs to be Shipped', 'in-transit':'In Transit', delivered:'Delivered', cancelled:'Cancelled' };
+  const statusClass  = { packaging:'sc-packaging', shipping:'sc-shipping', 'in-transit':'sc-in-transit', delivered:'sc-delivered', cancelled:'sc-cancelled' };
 
   const totalMg = ord.ingredients.reduce((s, i) => s + i.rdvMg, 0);
   const rdvRows = ord.ingredients.map(i =>
