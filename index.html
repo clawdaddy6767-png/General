@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TruDose — Supplement Order Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #07090f;
+      --s1:           #0c1018;
+      --s2:           #111827;
+      --s3:           #1a2235;
+      --border:       #1e2d45;
+      --border2:      #263348;
+      --accent:       #6d28d9;
+      --accent2:      #8b5cf6;
+      --glow:         rgba(109,40,217,0.18);
+      --teal:         #0891b2;
+      --green:        #059669;
+      --amber:        #d97706;
+      --red:          #dc2626;
+      --text:         #f1f5f9;
+      --t2:           #94a3b8;
+      --t3:           #475569;
+      --r:            12px;
+      --rs:           8px;
+      --shadow:       0 8px 32px rgba(0,0,0,0.5);
+      --trans:        all .2s ease;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--s1); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
+
+    /* ── Header ── */
+    header {
+      position: sticky; top: 0; z-index: 200;
+      height: 62px;
+      background: rgba(7,9,15,0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px;
+    }
+
+    .logo { display: flex; align-items: center; gap: 11px; }
+    .logo-mark {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, #6d28d9, #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; box-shadow: 0 4px 16px var(--glow);
+    }
+    .logo-name {
+      font-size: 19px; font-weight: 900; letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #fff 30%, #a78bfa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .logo-sub { font-size: 10px; color: var(--t3); font-weight: 400; margin-top: 1px; letter-spacing: .3px; }
+
+    .nav-tabs {
+      display: flex; gap: 4px;
+      background: var(--s2); border: 1px solid var(--border);
+      padding: 4px; border-radius: var(--rs);
+    }
+    .nav-tab {
+      padding: 7px 18px; border-radius: 6px; font-size: 13px; font-weight: 500;
+      cursor: pointer; border: none; background: transparent; color: var(--t2);
+      transition: var(--trans); white-space: nowrap;
+    }
+    .nav-tab.active { background: var(--accent); color: #fff; }
+    .nav-tab:hover:not(.active) { background: var(--s3); color: var(--text); }
+
+    /* ── Layout ── */
+    main { padding: 24px 28px; max-width: 1800px; margin: 0 auto; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Kanban ── */
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px;
+    }
+    .page-title { font-size: 22px; font-weight: 800; letter-spacing: -.4px; }
+    .page-sub { font-size: 13px; color: var(--t3); margin-top: 2px; }
+
+    .btn-new {
+      display: flex; align-items: center; gap: 7px;
+      padding: 9px 18px; background: var(--accent); color: #fff;
+      border: none; border-radius: var(--rs); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: var(--trans);
+    }
+    .btn-new:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 8px 24px var(--glow); }
+
+    .board {
+      display: flex; gap: 18px; overflow-x: auto; padding-bottom: 16px;
+      align-items: flex-start;
+    }
+    .board::-webkit-scrollbar { height: 4px; }
+
+    .col {
+      min-width: 308px; flex: 0 0 308px;
+      background: var(--s1); border: 1px solid var(--border);
+      border-radius: var(--r); transition: var(--trans);
+    }
+    .col.over { border-color: var(--accent2); background: rgba(109,40,217,.06); }
+
+    .col-head {
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .col-label { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .dot-pack    { background: var(--amber); box-shadow: 0 0 6px rgba(217,119,6,.5); }
+    .dot-ship    { background: var(--teal);  box-shadow: 0 0 6px rgba(8,145,178,.5); }
+    .dot-transit { background: #3b82f6;      box-shadow: 0 0 6px rgba(59,130,246,.5); }
+    .dot-deliv   { background: var(--green); box-shadow: 0 0 6px rgba(5,150,105,.5); }
+
+    .col-count {
+      font-size: 11px; font-weight: 700; padding: 2px 7px;
+      border-radius: 20px; background: var(--s3); color: var(--t2);
+    }
+
+    .col-body { padding: 10px; display: flex; flex-direction: column; gap: 9px; min-height: 90px; }
+
+    .empty-col {
+      text-align: center; padding: 28px 16px; color: var(--t3); font-size: 12px;
+      border: 1px dashed var(--border); border-radius: var(--rs); margin: 4px;
+    }
+
+    /* ── Order Card ── */
+    .card {
+      background: var(--s2); border: 1px solid var(--border);
+      border-radius: var(--rs); padding: 14px; cursor: grab;
+      transition: var(--trans); position: relative; overflow: hidden;
+    }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 3px; height: 100%;
+    }
+    .card.packaging::before   { background: var(--amber); }
+    .card.shipping::before    { background: var(--teal); }
+    .card.in-transit::before  { background: #3b82f6; }
+    .card.delivered::before   { background: var(--green); }
+
+    .card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow); }
+    .card.dragging { opacity: .45; cursor: grabbing; }
+
+    .card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 9px; }
+    .card-name { font-size: 14px; font-weight: 700; line-height: 1.3; }
+    .card-oid  { font-size: 10px; color: var(--t3); font-family: monospace; margin-top: 2px; }
+
+    .card-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 11px; }
+    .pill {
+      font-size: 10px; padding: 2px 7px; border-radius: 20px;
+      background: var(--s3); color: var(--t2); border: 1px solid var(--border); white-space: nowrap;
+    }
+
+    .card-footer { display: flex; align-items: center; justify-content: space-between; }
+    .card-date { font-size: 11px; color: var(--t3); }
+
+    .countdown {
+      display: flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+    .cd-ok  { background: rgba(5,150,105,.15);  color: #10b981; }
+    .cd-warn{ background: rgba(217,119,6,.15);   color: #f59e0b; }
+    .cd-urg { background: rgba(220,38,38,.15);   color: #f87171; }
+
+    /* ── Modals ── */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.72);
+      backdrop-filter: blur(6px); z-index: 500;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity .22s ease;
+    }
+    .overlay.on { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--s1); border: 1px solid var(--border2);
+      border-radius: 16px; width: 100%; box-shadow: 0 32px 80px rgba(0,0,0,.65);
+      transform: scale(.96) translateY(16px); transition: transform .22s ease; overflow: hidden;
+    }
+    .overlay.on .modal { transform: scale(1) translateY(0); }
+
+    .modal-new    { max-width: 580px; }
+    .modal-detail { max-width: 700px; max-height: 88vh; overflow-y: auto; }
+
+    .mhead {
+      padding: 22px 26px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .mtitle { font-size: 17px; font-weight: 800; }
+    .mclose {
+      width: 30px; height: 30px; border-radius: 7px;
+      background: var(--s3); border: none; color: var(--t2);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 17px; transition: var(--trans);
+    }
+    .mclose:hover { background: var(--red); color: #fff; }
+
+    .mbody { padding: 22px 26px; }
+
+    /* ── Forms ── */
+    .fg { margin-bottom: 18px; }
+    .fg label { display: block; font-size: 12px; font-weight: 600; color: var(--t2); margin-bottom: 7px; text-transform: uppercase; letter-spacing: .04em; }
+    .finput {
+      width: 100%; padding: 10px 13px; background: var(--s2);
+      border: 1px solid var(--border2); border-radius: var(--rs);
+      color: var(--text); font-size: 14px; font-family: inherit;
+      outline: none; transition: var(--trans);
+    }
+    .finput:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px var(--glow); }
+    .finput::placeholder { color: var(--t3); }
+
+    /* Typeahead */
+    .ta-wrap { position: relative; }
+    .ta-drop {
+      position: absolute; top: calc(100% + 5px); left: 0; right: 0;
+      background: var(--s2); border: 1px solid var(--border2);
+      border-radius: var(--rs); max-height: 272px; overflow-y: auto;
+      z-index: 600; box-shadow: var(--shadow); display: none;
+    }
+    .ta-drop.open { display: block; }
+    .ta-cat {
+      padding: 8px 12px 4px; font-size: 9px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .12em; color: var(--t3);
+      border-top: 1px solid var(--border);
+    }
+    .ta-cat:first-child { border-top: none; }
+    .ta-item {
+      padding: 8px 12px; font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: background .1s;
+    }
+    .ta-item:hover, .ta-item.hi { background: var(--s3); }
+    .ta-item.taken { opacity: .35; cursor: not-allowed; }
+    .ta-rdv { font-size: 11px; color: var(--t3); }
+
+    /* Tags */
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; min-height: 30px; }
+    .tag {
+      display: flex; align-items: center; gap: 5px;
+      padding: 4px 9px; background: var(--glow);
+      border: 1px solid rgba(109,40,217,.35); border-radius: 20px;
+      font-size: 11px; font-weight: 600; color: #a78bfa;
+    }
+    .tag-x { background: none; border: none; color: #a78bfa; cursor: pointer; font-size: 13px; line-height: 1; opacity: .7; }
+    .tag-x:hover { opacity: 1; }
+
+    /* RDV panel */
+    .rdv-panel {
+      background: var(--s3); border: 1px solid var(--border2);
+      border-radius: var(--rs); padding: 14px; margin-top: 14px;
+    }
+    .rdv-hd { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--t3); margin-bottom: 10px; }
+    .rdv-row {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 12px; padding: 5px 0;
+    }
+    .rdv-row:not(:last-child) { border-bottom: 1px solid var(--border); }
+    .rdv-n { color: var(--t2); }
+    .rdv-v { color: var(--text); font-weight: 600; font-family: monospace; font-size: 11px; }
+    .rdv-total { color: var(--accent2); font-weight: 700; }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%; padding: 11px; margin-top: 18px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: var(--rs); font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: var(--trans);
+    }
+    .btn-primary:hover { background: var(--accent2); box-shadow: 0 8px 24px var(--glow); }
+
+    .btn-cancel {
+      width: 100%; padding: 11px; margin-top: 14px;
+      background: rgba(220,38,38,.1); border: 1px solid rgba(220,38,38,.3);
+      color: #f87171; border-radius: var(--rs); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: var(--trans);
+    }
+    .btn-cancel:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+    /* ── Order Detail ── */
+    .detail-banner {
+      padding: 18px 26px; background: var(--s2); border-bottom: 1px solid var(--border);
+    }
+    .detail-banner-name { font-size: 20px; font-weight: 800; }
+    .detail-banner-id   { font-size: 11px; color: var(--t3); font-family: monospace; margin-top: 3px; }
+
+    .detail-meta {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px;
+    }
+    .dm-item { text-align: center; }
+    .dm-lbl  { font-size: 10px; color: var(--t3); text-transform: uppercase; letter-spacing: .06em; }
+    .dm-val  { font-size: 13px; font-weight: 700; margin-top: 4px; }
+
+    .status-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    }
+    .sc-packaging  { background: rgba(217,119,6,.15);  color: #f59e0b; }
+    .sc-shipping   { background: rgba(8,145,178,.15);  color: #22d3ee; }
+    .sc-in-transit { background: rgba(59,130,246,.15); color: #93c5fd; }
+    .sc-delivered  { background: rgba(5,150,105,.15);  color: #34d399; }
+    .sc-cancelled  { background: rgba(220,38,38,.15);  color: #f87171; }
+
+    .sec-title {
+      font-size: 10px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--t3); margin: 20px 0 10px;
+    }
+
+    /* History */
+    .history { display: flex; flex-direction: column; }
+    .h-item  { display: flex; gap: 14px; padding: 9px 0; position: relative; }
+    .h-item:not(:last-child)::before {
+      content: ''; position: absolute; left: 11px; top: 32px;
+      bottom: 0; width: 2px; background: var(--border);
+    }
+    .h-dot {
+      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 10px; margin-top: 2px;
+    }
+    .hd-created   { background: rgba(109,40,217,.2);  color: #a78bfa; }
+    .hd-packaged  { background: rgba(217,119,6,.2);   color: #fbbf24; }
+    .hd-shipped   { background: rgba(8,145,178,.2);   color: #22d3ee; }
+    .hd-delivered { background: rgba(5,150,105,.2);   color: #34d399; }
+    .hd-renewed   { background: rgba(109,40,217,.2);  color: #a78bfa; }
+    .hd-cancelled { background: rgba(220,38,38,.2);   color: #f87171; }
+
+    .h-content { flex: 1; }
+    .h-evt  { font-size: 13px; font-weight: 600; }
+    .h-time { font-size: 11px; color: var(--t3); margin-top: 2px; }
+
+    .cancelled-notice {
+      text-align: center; padding: 12px; margin-top: 14px;
+      background: rgba(220,38,38,.08); border: 1px solid rgba(220,38,38,.2);
+      border-radius: var(--rs); color: #f87171; font-size: 13px; font-weight: 600;
+    }
+    .cancel-divider { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
+
+    /* ── Dashboard ── */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+    @media (max-width: 1100px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 580px)  { .stats-row { grid-template-columns: 1fr; } }
+
+    .stat {
+      background: var(--s1); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 18px 20px;
+    }
+    .stat-lbl { font-size: 11px; font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: .06em; }
+    .stat-val { font-size: 30px; font-weight: 900; letter-spacing: -1px; margin-top: 6px; }
+    .stat-hint{ font-size: 11px; color: var(--t3); margin-top: 4px; }
+    .s-green  { color: #10b981; }
+    .s-purple { color: #a78bfa; }
+    .s-amber  { color: #f59e0b; }
+    .s-red    { color: #f87171; }
+
+    .dash-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 18px; margin-bottom: 18px; }
+    @media (max-width: 1000px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    .dash-card {
+      background: var(--s1); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 20px;
+    }
+    .dc-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+
+    /* Chart */
+    #revenue-chart { display: block; }
+
+    /* Rankings */
+    .rank-list { display: flex; flex-direction: column; gap: 10px; }
+    .rank-item { display: flex; align-items: center; gap: 10px; }
+    .rank-n {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; background: var(--s3); color: var(--t3);
+    }
+    .rank-n.top { background: var(--glow); color: var(--accent2); }
+    .rank-bar-wrap { flex: 1; }
+    .rank-name-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+    .rank-cnt { font-size: 11px; color: var(--t3); }
+    .rank-track { height: 4px; background: var(--s3); border-radius: 2px; overflow: hidden; }
+    .rank-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; }
+
+    /* Category grid */
+    .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    @media (max-width: 900px) { .cat-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 580px) { .cat-grid { grid-template-columns: 1fr; } }
+
+    .cat-card { background: var(--s2); border: 1px solid var(--border); border-radius: var(--rs); padding: 14px; }
+    .cat-name { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: var(--t3); margin-bottom: 10px; }
+    .cat-item { display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 5px; }
+    .cat-item-name { color: var(--t2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+    .cat-item-cnt { color: var(--accent2); font-weight: 700; font-size: 11px; flex-shrink: 0; }
+
+    /* Toast */
+    .toasts { position: fixed; bottom: 22px; right: 22px; z-index: 900; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      padding: 11px 15px; border-radius: var(--rs); font-size: 13px; font-weight: 500;
+      box-shadow: var(--shadow); max-width: 300px; animation: tin .3s ease;
+    }
+    .toast-ok   { background: var(--s2); border-left: 3px solid var(--green); color: var(--text); }
+    .toast-info { background: var(--s2); border-left: 3px solid var(--accent2); color: var(--text); }
+    .toast-warn { background: var(--s2); border-left: 3px solid var(--amber); color: var(--text); }
+
+    @keyframes tin  { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes tout { from { transform: translateX(0);    opacity: 1; } to { transform: translateX(110%); opacity: 0; } }
+
+    /* Responsive header */
+    @media (max-width: 580px) {
+      header { padding: 0 14px; }
+      .logo-sub { display: none; }
+      .nav-tab  { padding: 7px 12px; font-size: 12px; }
+      main { padding: 16px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">💊</div>
+    <div>
+      <div class="logo-name">TruDose</div>
+      <div class="logo-sub">Supplement Subscription Manager</div>
+    </div>
+  </div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" data-view="kanban" onclick="switchView('kanban',this)">📋&nbsp; Orders</button>
+    <button class="nav-tab" data-view="dashboard" onclick="switchView('dashboard',this)">📊&nbsp; Dashboard</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ── Kanban View ── -->
+  <div id="kanban-view" class="view active">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Order Pipeline</div>
+        <div class="page-sub">Drag orders between stages to update status</div>
+      </div>
+      <button class="btn-new" onclick="openNew()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        New Order
+      </button>
+    </div>
+    <div class="board" id="board"></div>
+  </div>
+
+  <!-- ── Dashboard View ── -->
+  <div id="dashboard-view" class="view">
+    <div class="page-title" style="margin-bottom:22px;">Sales Dashboard</div>
+    <div id="dash-content"></div>
+  </div>
+</main>
+
+<!-- ── New Order Modal ── -->
+<div class="overlay" id="new-overlay" onclick="overlayClose(event,'new-overlay')">
+  <div class="modal modal-new">
+    <div class="mhead">
+      <span class="mtitle">Create New Order</span>
+      <button class="mclose" onclick="closeModal('new-overlay')">×</button>
+    </div>
+    <div class="mbody">
+      <div class="fg">
+        <label>Customer Name</label>
+        <input class="finput" id="cust-name" type="text" placeholder="Full name…">
+      </div>
+      <div class="fg">
+        <label>Add Ingredients</label>
+        <div class="ta-wrap">
+          <input class="finput" id="ing-search" type="text" placeholder="Search supplements, vitamins, minerals…"
+            oninput="taSearch(this.value)" onkeydown="taKey(event)" autocomplete="off">
+          <div class="ta-drop" id="ta-drop"></div>
+        </div>
+        <div class="tags" id="sel-tags"><span style="font-size:12px;color:var(--t3);">No ingredients selected yet</span></div>
+      </div>
+      <div id="rdv-wrap" style="display:none"></div>
+      <button class="btn-primary" onclick="submitOrder()">Create Order — $115</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Order Detail Modal ── -->
+<div class="overlay" id="det-overlay" onclick="overlayClose(event,'det-overlay')">
+  <div class="modal modal-detail" id="det-modal"></div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// PRODUCT CATALOG
+// ═══════════════════════════════════════════════════════
+const CATALOG = [
+  // Vitamins
+  { name:'Vitamin A',            cat:'Vitamins',         rdvMg:0.9,     rdvLabel:'900 mcg' },
+  { name:'Vitamin B1',           cat:'Vitamins',         rdvMg:1.2,     rdvLabel:'1.2 mg' },
+  { name:'Vitamin B2',           cat:'Vitamins',         rdvMg:1.3,     rdvLabel:'1.3 mg' },
+  { name:'Vitamin B3',           cat:'Vitamins',         rdvMg:16,      rdvLabel:'16 mg' },
+  { name:'Vitamin B5',           cat:'Vitamins',         rdvMg:5,       rdvLabel:'5 mg' },
+  { name:'Vitamin B6',           cat:'Vitamins',         rdvMg:1.7,     rdvLabel:'1.7 mg' },
+  { name:'Vitamin B7',           cat:'Vitamins',         rdvMg:0.03,    rdvLabel:'30 mcg' },
+  { name:'Vitamin B9',           cat:'Vitamins',         rdvMg:0.4,     rdvLabel:'400 mcg' },
+  { name:'Vitamin B12',          cat:'Vitamins',         rdvMg:0.0024,  rdvLabel:'2.4 mcg' },
+  { name:'Vitamin C',            cat:'Vitamins',         rdvMg:90,      rdvLabel:'90 mg' },
+  { name:'Vitamin D3',           cat:'Vitamins',         rdvMg:0.02,    rdvLabel:'20 mcg' },
+  { name:'Vitamin E',            cat:'Vitamins',         rdvMg:15,      rdvLabel:'15 mg' },
+  { name:'Vitamin K1',           cat:'Vitamins',         rdvMg:0.12,    rdvLabel:'120 mcg' },
+  { name:'Vitamin K2',           cat:'Vitamins',         rdvMg:0.12,    rdvLabel:'120 mcg' },
+  // Minerals
+  { name:'Magnesium',            cat:'Minerals',         rdvMg:420,     rdvLabel:'420 mg' },
+  { name:'Zinc',                 cat:'Minerals',         rdvMg:11,      rdvLabel:'11 mg' },
+  { name:'Iron',                 cat:'Minerals',         rdvMg:8,       rdvLabel:'8 mg' },
+  { name:'Calcium',              cat:'Minerals',         rdvMg:1000,    rdvLabel:'1000 mg' },
+  { name:'Potassium',            cat:'Minerals',         rdvMg:3500,    rdvLabel:'3500 mg' },
+  { name:'Selenium',             cat:'Minerals',         rdvMg:0.055,   rdvLabel:'55 mcg' },
+  { name:'Chromium',             cat:'Minerals',         rdvMg:0.035,   rdvLabel:'35 mcg' },
+  { name:'Iodine',               cat:'Minerals',         rdvMg:0.15,    rdvLabel:'150 mcg' },
+  { name:'Copper',               cat:'Minerals',         rdvMg:0.9,     rdvLabel:'0.9 mg' },
+  { name:'Manganese',            cat:'Minerals',         rdvMg:2.3,     rdvLabel:'2.3 mg' },
+  // Supplements
+  { name:'Ashwagandha',          cat:'Supplements',      rdvMg:300,     rdvLabel:'300 mg' },
+  { name:'Rhodiola',             cat:'Supplements',      rdvMg:200,     rdvLabel:'200 mg' },
+  { name:'Lions Mane',           cat:'Supplements',      rdvMg:500,     rdvLabel:'500 mg' },
+  { name:'Reishi',               cat:'Supplements',      rdvMg:500,     rdvLabel:'500 mg' },
+  { name:'Creatine',             cat:'Supplements',      rdvMg:5000,    rdvLabel:'5 g' },
+  { name:'Glutamine',            cat:'Supplements',      rdvMg:5000,    rdvLabel:'5 g' },
+  { name:'BCAAs',                cat:'Supplements',      rdvMg:5000,    rdvLabel:'5 g' },
+  { name:'CoQ10',                cat:'Supplements',      rdvMg:100,     rdvLabel:'100 mg' },
+  { name:'Turmeric',             cat:'Supplements',      rdvMg:500,     rdvLabel:'500 mg' },
+  { name:'Berberine',            cat:'Supplements',      rdvMg:500,     rdvLabel:'500 mg' },
+  { name:'NAC',                  cat:'Supplements',      rdvMg:600,     rdvLabel:'600 mg' },
+  { name:'NMN',                  cat:'Supplements',      rdvMg:300,     rdvLabel:'300 mg' },
+  { name:'Alpha Lipoic Acid',    cat:'Supplements',      rdvMg:300,     rdvLabel:'300 mg' },
+  { name:'Quercetin',            cat:'Supplements',      rdvMg:500,     rdvLabel:'500 mg' },
+  { name:'Resveratrol',          cat:'Supplements',      rdvMg:150,     rdvLabel:'150 mg' },
+  // Protein
+  { name:'Whey Protein',         cat:'Protein',          rdvMg:25000,   rdvLabel:'25 g' },
+  { name:'Casein',               cat:'Protein',          rdvMg:25000,   rdvLabel:'25 g' },
+  { name:'Pea Protein',          cat:'Protein',          rdvMg:25000,   rdvLabel:'25 g' },
+  { name:'Collagen Peptides',    cat:'Protein',          rdvMg:10000,   rdvLabel:'10 g' },
+  { name:'Hemp Protein',         cat:'Protein',          rdvMg:25000,   rdvLabel:'25 g' },
+  // Caffeine & Energy
+  { name:'Caffeine Anhydrous',   cat:'Caffeine & Energy',rdvMg:200,     rdvLabel:'200 mg' },
+  { name:'L-Theanine',           cat:'Caffeine & Energy',rdvMg:200,     rdvLabel:'200 mg' },
+  { name:'Green Tea Extract',    cat:'Caffeine & Energy',rdvMg:300,     rdvLabel:'300 mg' },
+  { name:'Guarana',              cat:'Caffeine & Energy',rdvMg:200,     rdvLabel:'200 mg' },
+  // Other
+  { name:'Fish Oil',             cat:'Other',            rdvMg:1000,    rdvLabel:'1000 mg' },
+  { name:'Spirulina',            cat:'Other',            rdvMg:3000,    rdvLabel:'3 g' },
+  { name:'Chlorella',            cat:'Other',            rdvMg:3000,    rdvLabel:'3 g' },
+  { name:'Maca',                 cat:'Other',            rdvMg:1500,    rdvLabel:'1.5 g' },
+  { name:'Beetroot Powder',      cat:'Other',            rdvMg:500,     rdvLabel:'500 mg' },
+];
+
+const CATS = ['Vitamins','Minerals','Supplements','Protein','Caffeine & Energy','Other'];
+const PRICE = 115;
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let orders = [];
+let revenue = [];
+let selIngs = [];    // selected ingredients for new order form
+let taIdx   = -1;    // typeahead highlight index
+let dragId  = null;
+
+// ═══════════════════════════════════════════════════════
+// LOCALSTORAGE
+// ═══════════════════════════════════════════════════════
+function save() {
+  localStorage.setItem('td_orders', JSON.stringify(orders));
+  localStorage.setItem('td_revenue', JSON.stringify(revenue));
+}
+
+function load() {
+  try {
+    const o = localStorage.getItem('td_orders');
+    const r = localStorage.getItem('td_revenue');
+    if (o) {
+      orders = JSON.parse(o);
+      orders.forEach(ord => {
+        ord.createdAt       = new Date(ord.createdAt);
+        ord.stageDate       = new Date(ord.stageDate);
+        if (ord.lastPackedAt) ord.lastPackedAt = new Date(ord.lastPackedAt);
+        ord.history = ord.history.map(h => ({ ...h, ts: new Date(h.ts) }));
+      });
+    }
+    if (r) {
+      revenue = JSON.parse(r);
+      revenue = revenue.map(rv => ({ ...rv, date: new Date(rv.date) }));
+    }
+  } catch(e) { orders = []; revenue = []; }
+}
+
+// ═══════════════════════════════════════════════════════
+// SEED DATA
+// ═══════════════════════════════════════════════════════
+function seedData() {
+  const now = new Date();
+  const ago = n => new Date(now - n * 864e5);
+
+  const ing = name => CATALOG.find(c => c.name === name);
+
+  orders = [
+    {
+      id: 'TRD-0001',
+      customerName: 'Emma Rodriguez',
+      ingredients: [ing('Vitamin C'), ing('Vitamin D3'), ing('Magnesium'), ing('Zinc')],
+      status: 'delivered',
+      subStatus: 'active',
+      createdAt: ago(44),
+      stageDate: ago(8),
+      lastPackedAt: ago(12),
+      history: [
+        { event:'created',   label:'Order created',              ts: ago(44) },
+        { event:'packaged',  label:'Moved to packaging',          ts: ago(44) },
+        { event:'shipped',   label:'Marked as shipped',           ts: ago(40) },
+        { event:'delivered', label:'Marked as delivered',         ts: ago(38) },
+        { event:'renewed',   label:'Auto-renewed (Month 2)',       ts: ago(12) },
+        { event:'packaged',  label:'Moved to packaging',          ts: ago(12) },
+        { event:'shipped',   label:'Marked as shipped',           ts: ago(10) },
+        { event:'delivered', label:'Marked as delivered',         ts: ago(8) },
+      ]
+    },
+    {
+      id: 'TRD-0002',
+      customerName: 'James Park',
+      ingredients: [ing('Whey Protein'), ing('Creatine'), ing('Glutamine'), ing('BCAAs')],
+      status: 'shipping',
+      subStatus: 'active',
+      createdAt: ago(22),
+      stageDate: ago(5),
+      lastPackedAt: ago(20),
+      history: [
+        { event:'created',  label:'Order created',       ts: ago(22) },
+        { event:'packaged', label:'Moved to packaging',   ts: ago(22) },
+        { event:'shipped',  label:'Marked as shipped',    ts: ago(5) },
+      ]
+    },
+    {
+      id: 'TRD-0003',
+      customerName: 'Alex Thompson',
+      ingredients: [ing('Ashwagandha'), ing('Lions Mane'), ing('Rhodiola'), ing('Reishi'), ing('NAC')],
+      status: 'packaging',
+      subStatus: 'active',
+      createdAt: ago(4),
+      stageDate: ago(4),
+      lastPackedAt: ago(4),
+      history: [
+        { event:'created',  label:'Order created',       ts: ago(4) },
+        { event:'packaged', label:'Moved to packaging',   ts: ago(4) },
+      ]
+    },
+    {
+      id: 'TRD-0004',
+      customerName: 'Sarah Chen',
+      ingredients: [ing('Fish Oil'), ing('Vitamin K2'), ing('Vitamin B12'), ing('CoQ10')],
+      status: 'delivered',
+      subStatus: 'active',
+      createdAt: ago(37),
+      stageDate: ago(3),
+      lastPackedAt: ago(27),
+      history: [
+        { event:'created',   label:'Order created',       ts: ago(37) },
+        { event:'packaged',  label:'Moved to packaging',   ts: ago(37) },
+        { event:'shipped',   label:'Marked as shipped',    ts: ago(32) },
+        { event:'delivered', label:'Marked as delivered',  ts: ago(3) },
+      ]
+    }
+  ];
+
+  revenue = [
+    { orderId:'TRD-0001', amount:PRICE, type:'new',     date: ago(44) },
+    { orderId:'TRD-0001', amount:PRICE, type:'renewal', date: ago(12) },
+    { orderId:'TRD-0002', amount:PRICE, type:'new',     date: ago(22) },
+    { orderId:'TRD-0003', amount:PRICE, type:'new',     date: ago(4)  },
+    { orderId:'TRD-0004', amount:PRICE, type:'new',     date: ago(37) },
+  ];
+
+  save();
+}
+
+// ═══════════════════════════════════════════════════════
+// ORDER ID
+// ═══════════════════════════════════════════════════════
+function nextId() {
+  const max = orders.reduce((m, o) => Math.max(m, parseInt(o.id.replace('TRD-','')) || 0), 0);
+  return `TRD-${String(max + 1).padStart(4, '0')}`;
+}
+
+// ═══════════════════════════════════════════════════════
+// ORDER ACTIONS
+// ═══════════════════════════════════════════════════════
+function createOrder(name, ings) {
+  const now = new Date();
+  const id  = nextId();
+  const ord = {
+    id, customerName: name, ingredients: ings,
+    status: 'packaging', subStatus: 'active',
+    createdAt: now, stageDate: now, lastPackedAt: now,
+    history: [
+      { event:'created',  label:'Order created',     ts: now },
+      { event:'packaged', label:'Moved to packaging', ts: now },
+    ]
+  };
+  orders.push(ord);
+  revenue.push({ orderId: id, amount: PRICE, type: 'new', date: now });
+  save();
+  return ord;
+}
+
+function moveOrder(id, newStatus) {
+  const ord = orders.find(o => o.id === id);
+  if (!ord || ord.status === newStatus) return;
+  const now = new Date();
+  ord.status    = newStatus;
+  ord.stageDate = now;
+  const evts = {
+    packaging:   { event:'packaged',    label:'Moved to packaging'   },
+    shipping:    { event:'shipped',     label:'Marked as shipped'    },
+    'in-transit':{ event:'in-transit',  label:'Marked as in transit' },
+    delivered:   { event:'delivered',   label:'Marked as delivered'  },
+  };
+  if (newStatus === 'packaging') ord.lastPackedAt = now;
+  if (evts[newStatus]) ord.history.push({ ...evts[newStatus], ts: now });
+  save();
+}
+
+function cancelOrder(id) {
+  const ord = orders.find(o => o.id === id);
+  if (!ord) return;
+  const now = new Date();
+  ord.subStatus = 'cancelled';
+  ord.status    = 'cancelled';
+  ord.stageDate = now;
+  ord.history.push({ event:'cancelled', label:'Subscription cancelled', ts: now });
+  save();
+}
+
+// ═══════════════════════════════════════════════════════
+// AUTO-RENEWAL
+// ═══════════════════════════════════════════════════════
+function daysLeft(ord) {
+  if (!ord.lastPackedAt) return 30;
+  const ms = 30 * 864e5 - (Date.now() - new Date(ord.lastPackedAt).getTime());
+  return Math.max(0, Math.ceil(ms / 864e5));
+}
+
+function checkRenewals() {
+  let changed = false;
+  orders.forEach(ord => {
+    if (ord.status === 'delivered' && ord.subStatus === 'active' && daysLeft(ord) === 0) {
+      const now = new Date();
+      ord.status      = 'packaging';
+      ord.stageDate   = now;
+      ord.lastPackedAt= now;
+      ord.history.push({ event:'renewed', label:'Auto-renewed — returned to packaging', ts: now });
+      revenue.push({ orderId: ord.id, amount: PRICE, type: 'renewal', date: now });
+      toast(`${ord.customerName}'s subscription auto-renewed! 🔄`, 'info');
+      changed = true;
+    }
+  });
+  if (changed) { save(); renderBoard(); renderDash(); }
+}
+
+// ═══════════════════════════════════════════════════════
+// KANBAN RENDER
+// ═══════════════════════════════════════════════════════
+const COLS = [
+  { id:'packaging',   label:'Needs to be Packaged', dot:'dot-pack'    },
+  { id:'shipping',    label:'Needs to be Shipped',  dot:'dot-ship'    },
+  { id:'in-transit',  label:'In Transit',           dot:'dot-transit' },
+  { id:'delivered',   label:'Delivered',            dot:'dot-deliv'   },
+];
+
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = COLS.map(col => {
+    const colOrds = orders.filter(o => o.status === col.id);
+    return `
+      <div class="col" id="col-${col.id}"
+        ondragover="dOver(event,'${col.id}')"
+        ondragleave="dLeave(event)"
+        ondrop="dDrop(event,'${col.id}')">
+        <div class="col-head">
+          <div class="col-label">
+            <span class="dot ${col.dot}"></span>${col.label}
+          </div>
+          <span class="col-count">${colOrds.length}</span>
+        </div>
+        <div class="col-body" id="body-${col.id}">
+          ${colOrds.length ? colOrds.map(renderCard).join('') : '<div class="empty-col">Drop orders here</div>'}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderCard(ord) {
+  const pills = ord.ingredients.slice(0, 4).map(i =>
+    `<span class="pill">${esc(i.name)}</span>`
+  ).join('') + (ord.ingredients.length > 4 ? `<span class="pill">+${ord.ingredients.length - 4} more</span>` : '');
+
+  let cd = '';
+  if (ord.status === 'delivered' && ord.subStatus === 'active') {
+    const d = daysLeft(ord);
+    const cls = d <= 3 ? 'cd-urg' : d <= 7 ? 'cd-warn' : 'cd-ok';
+    const renewDate = new Date(new Date(ord.lastPackedAt).getTime() + 30 * 864e5);
+    cd = `<span class="countdown ${cls}" title="Renews ${fmtDate(renewDate)}">⟳ ${d}d</span>`;
+  }
+
+  return `
+    <div class="card ${ord.status}" id="card-${ord.id}"
+      draggable="true"
+      ondragstart="dStart(event,'${ord.id}')"
+      ondragend="dEnd(event)"
+      onclick="openDetail('${ord.id}')">
+      <div class="card-top">
+        <div>
+          <div class="card-name">${esc(ord.customerName)}</div>
+          <div class="card-oid">${ord.id}</div>
+        </div>
+      </div>
+      <div class="card-pills">${pills}</div>
+      <div class="card-footer">
+        <span class="card-date">📅 ${fmtDate(ord.stageDate)}</span>
+        ${cd}
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// DRAG AND DROP
+// ═══════════════════════════════════════════════════════
+function dStart(e, id) {
+  dragId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => document.getElementById(`card-${id}`)?.classList.add('dragging'), 0);
+}
+function dEnd(e) {
+  if (dragId) document.getElementById(`card-${dragId}`)?.classList.remove('dragging');
+  document.querySelectorAll('.col').forEach(c => c.classList.remove('over'));
+}
+function dOver(e, colId) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.getElementById(`col-${colId}`)?.classList.add('over');
+}
+function dLeave(e) {
+  if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('over');
+}
+function dDrop(e, colId) {
+  e.preventDefault();
+  document.querySelectorAll('.col').forEach(c => c.classList.remove('over'));
+  if (!dragId) return;
+  const ord = orders.find(o => o.id === dragId);
+  if (!ord || ord.status === colId) { dragId = null; return; }
+  if (ord.subStatus === 'cancelled') { toast('Cancelled orders cannot be moved', 'warn'); dragId = null; return; }
+  moveOrder(dragId, colId);
+  dragId = null;
+  renderBoard();
+  renderDash();
+  toast('Order status updated', 'ok');
+}
+
+// ═══════════════════════════════════════════════════════
+// ORDER DETAIL MODAL
+// ═══════════════════════════════════════════════════════
+function openDetail(id) {
+  const ord = orders.find(o => o.id === id);
+  if (!ord) return;
+
+  const statusLabels = { packaging:'Needs to be Packaged', shipping:'Needs to be Shipped', 'in-transit':'In Transit', delivered:'Delivered', cancelled:'Cancelled' };
+  const statusClass  = { packaging:'sc-packaging', shipping:'sc-shipping', 'in-transit':'sc-in-transit', delivered:'sc-delivered', cancelled:'sc-cancelled' };
+
+  const totalMg = ord.ingredients.reduce((s, i) => s + i.rdvMg, 0);
+  const rdvRows = ord.ingredients.map(i =>
+    `<div class="rdv-row"><span class="rdv-n">${esc(i.name)}</span><span class="rdv-v">${i.rdvLabel}</span></div>`
+  ).join('') + `<div class="rdv-row rdv-total"><span>Total Daily Dose</span><span class="rdv-v">${fmtTotal(totalMg)}</span></div>`;
+
+  const histIcons = { created:'✦', packaged:'📦', shipped:'🚚', delivered:'✓', renewed:'⟳', cancelled:'✕' };
+  const histClass = { created:'hd-created', packaged:'hd-packaged', shipped:'hd-shipped', delivered:'hd-delivered', renewed:'hd-renewed', cancelled:'hd-cancelled' };
+
+  const histItems = [...ord.history].reverse().map(h =>
+    `<div class="h-item">
+      <div class="h-dot ${histClass[h.event] || 'hd-created'}">${histIcons[h.event] || '•'}</div>
+      <div class="h-content">
+        <div class="h-evt">${h.label}</div>
+        <div class="h-time">${fmtDateTime(h.ts)}</div>
+      </div>
+    </div>`
+  ).join('');
+
+  const cancelSection = ord.subStatus === 'active'
+    ? `<div class="cancel-divider">
+         <button class="btn-cancel" onclick="doCancel('${ord.id}')">Cancel Subscription</button>
+       </div>`
+    : `<div class="cancelled-notice">⊘ Subscription Cancelled — No further renewals</div>`;
+
+  const cd = ord.status === 'delivered' && ord.subStatus === 'active'
+    ? `<div class="dm-item">
+         <div class="dm-lbl">Renews In</div>
+         <div class="dm-val" style="color:${daysLeft(ord) <= 3 ? '#f87171' : daysLeft(ord) <= 7 ? '#f59e0b' : '#34d399'}">${daysLeft(ord)} days</div>
+       </div>`
+    : `<div class="dm-item">
+         <div class="dm-lbl">Revenue</div>
+         <div class="dm-val" style="color:#a78bfa">$${revenue.filter(r => r.orderId === ord.id).reduce((s,r) => s+r.amount, 0)}</div>
+       </div>`;
+
+  document.getElementById('det-modal').innerHTML = `
+    <div class="mhead">
+      <span class="mtitle">${esc(ord.customerName)}</span>
+      <button class="mclose" onclick="closeModal('det-overlay')">×</button>
+    </div>
+    <div class="detail-banner">
+      <div class="detail-banner-name">${esc(ord.customerName)}</div>
+      <div class="detail-banner-id">${ord.id}</div>
+      <div class="detail-meta">
+        <div class="dm-item">
+          <div class="dm-lbl">Status</div>
+          <div class="dm-val"><span class="status-chip ${statusClass[ord.status]}">${statusLabels[ord.status]}</span></div>
+        </div>
+        <div class="dm-item">
+          <div class="dm-lbl">Created</div>
+          <div class="dm-val">${fmtDate(ord.createdAt)}</div>
+        </div>
+        ${cd}
+      </div>
+    </div>
+    <div class="mbody">
+      <div class="sec-title">Ingredients & Recommended Daily Values</div>
+      <div class="rdv-panel">${rdvRows}</div>
+
+      <div class="sec-title">Order History</div>
+      <div class="history">${histItems}</div>
+
+      ${cancelSection}
+    </div>`;
+
+  openModal('det-overlay');
+}
+
+function doCancel(id) {
+  if (!confirm('Cancel this subscription? The order will be removed from the board and no further renewals will occur.')) return;
+  cancelOrder(id);
+  closeModal('det-overlay');
+  renderBoard();
+  renderDash();
+  toast('Subscription cancelled', 'warn');
+}
+
+// ═══════════════════════════════════════════════════════
+// NEW ORDER MODAL
+// ═══════════════════════════════════════════════════════
+function openNew() {
+  selIngs = [];
+  document.getElementById('cust-name').value = '';
+  document.getElementById('ing-search').value = '';
+  document.getElementById('ta-drop').classList.remove('open');
+  renderTags();
+  openModal('new-overlay');
+  setTimeout(() => document.getElementById('cust-name').focus(), 100);
+}
+
+function taSearch(q) {
+  const drop = document.getElementById('ta-drop');
+  taIdx = -1;
+  if (!q.trim()) { drop.classList.remove('open'); return; }
+  const lq = q.toLowerCase();
+  const matched = CATALOG.filter(c => c.name.toLowerCase().includes(lq) || c.cat.toLowerCase().includes(lq));
+  if (!matched.length) {
+    drop.innerHTML = '<div style="padding:12px;color:var(--t3);font-size:13px;">No matches found</div>';
+    drop.classList.add('open'); return;
+  }
+  const grouped = {};
+  matched.forEach(c => { (grouped[c.cat] = grouped[c.cat] || []).push(c); });
+  drop.innerHTML = Object.entries(grouped).map(([cat, items]) =>
+    `<div class="ta-cat">${cat}</div>` +
+    items.map(item => {
+      const taken = selIngs.some(s => s.name === item.name);
+      return `<div class="ta-item${taken ? ' taken' : ''}" data-name="${esc(item.name)}"
+        onclick="${taken ? '' : `selectIng('${item.name}')`}">
+        <span>${esc(item.name)}</span>
+        <span class="ta-rdv">${item.rdvLabel}</span>
+      </div>`;
+    }).join('')
+  ).join('');
+  drop.classList.add('open');
+}
+
+function taKey(e) {
+  const drop = document.getElementById('ta-drop');
+  const items = [...drop.querySelectorAll('.ta-item:not(.taken)')];
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    taIdx = Math.min(taIdx + 1, items.length - 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    taIdx = Math.max(taIdx - 1, 0);
+  } else if (e.key === 'Enter' && taIdx >= 0) {
+    e.preventDefault();
+    items[taIdx]?.click();
+    return;
+  } else if (e.key === 'Escape') {
+    drop.classList.remove('open'); return;
+  } else return;
+  items.forEach((el, i) => el.classList.toggle('hi', i === taIdx));
+}
+
+function selectIng(name) {
+  const item = CATALOG.find(c => c.name === name);
+  if (!item || selIngs.some(s => s.name === name)) return;
+  selIngs.push(item);
+  document.getElementById('ing-search').value = '';
+  document.getElementById('ta-drop').classList.remove('open');
+  renderTags();
+}
+
+function removeIng(name) {
+  selIngs = selIngs.filter(i => i.name !== name);
+  renderTags();
+}
+
+function renderTags() {
+  const tags = document.getElementById('sel-tags');
+  const rdvW = document.getElementById('rdv-wrap');
+  if (!selIngs.length) {
+    tags.innerHTML = '<span style="font-size:12px;color:var(--t3);">No ingredients selected yet</span>';
+    rdvW.style.display = 'none';
+    return;
+  }
+  tags.innerHTML = selIngs.map(i =>
+    `<span class="tag">${esc(i.name)}<button class="tag-x" onclick="removeIng('${i.name}')">×</button></span>`
+  ).join('');
+  const total = selIngs.reduce((s, i) => s + i.rdvMg, 0);
+  rdvW.style.display = 'block';
+  rdvW.innerHTML = `<div class="rdv-panel">
+    <div class="rdv-hd">Recommended Daily Values</div>
+    ${selIngs.map(i => `<div class="rdv-row"><span class="rdv-n">${esc(i.name)}</span><span class="rdv-v">${i.rdvLabel}</span></div>`).join('')}
+    <div class="rdv-row rdv-total"><span>Total Daily Dose</span><span class="rdv-v">${fmtTotal(total)}</span></div>
+  </div>`;
+}
+
+function submitOrder() {
+  const name = document.getElementById('cust-name').value.trim();
+  if (!name)          { toast('Please enter a customer name', 'warn'); document.getElementById('cust-name').focus(); return; }
+  if (!selIngs.length){ toast('Please select at least one ingredient', 'warn'); return; }
+  const ord = createOrder(name, [...selIngs]);
+  closeModal('new-overlay');
+  renderBoard();
+  renderDash();
+  toast(`Order ${ord.id} created for ${name} ✓`, 'ok');
+}
+
+// ═══════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════
+function renderDash() {
+  const active    = orders.filter(o => o.subStatus === 'active').length;
+  const cancelled = orders.filter(o => o.subStatus === 'cancelled').length;
+  const totalRev  = revenue.reduce((s, r) => s + r.amount, 0);
+  const mrr       = active * PRICE;
+
+  // This month revenue
+  const now = new Date();
+  const thisMoRev = revenue.filter(r => {
+    const d = new Date(r.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).reduce((s, r) => s + r.amount, 0);
+
+  // Ingredient counts
+  const ingCounts = {};
+  orders.forEach(o => o.ingredients.forEach(i => { ingCounts[i.name] = (ingCounts[i.name] || 0) + 1; }));
+  const sortedIngs = Object.entries(ingCounts).sort((a, b) => b[1] - a[1]);
+  const maxCnt = sortedIngs[0]?.[1] || 1;
+
+  // Category counts
+  const catCounts = {};
+  orders.forEach(o => o.ingredients.forEach(i => {
+    if (!catCounts[i.cat]) catCounts[i.cat] = {};
+    catCounts[i.cat][i.name] = (catCounts[i.cat][i.name] || 0) + 1;
+  }));
+
+  const dc = document.getElementById('dash-content');
+  dc.innerHTML = `
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-lbl">Total Revenue</div>
+        <div class="stat-val s-green">$${totalRev.toLocaleString()}</div>
+        <div class="stat-hint">${revenue.length} transactions all-time</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Active Subscriptions</div>
+        <div class="stat-val s-purple">${active}</div>
+        <div class="stat-hint">$${mrr.toLocaleString()} monthly recurring</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">This Month Revenue</div>
+        <div class="stat-val s-amber">$${thisMoRev.toLocaleString()}</div>
+        <div class="stat-hint">${revenue.filter(r => { const d=new Date(r.date); return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); }).length} transactions</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Cancelled</div>
+        <div class="stat-val s-red">${cancelled}</div>
+        <div class="stat-hint">${orders.length} total orders created</div>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+      <div class="dash-card">
+        <div class="dc-title">Monthly Revenue</div>
+        <canvas id="revenue-chart" height="200"></canvas>
+      </div>
+      <div class="dash-card">
+        <div class="dc-title">Top Ingredients</div>
+        <div class="rank-list">
+          ${sortedIngs.slice(0, 9).map(([name, cnt], i) => `
+            <div class="rank-item">
+              <div class="rank-n ${i < 3 ? 'top' : ''}">${i + 1}</div>
+              <div class="rank-bar-wrap">
+                <div class="rank-name-row">
+                  <span style="font-size:12px;">${esc(name)}</span>
+                  <span class="rank-cnt">${cnt} orders</span>
+                </div>
+                <div class="rank-track">
+                  <div class="rank-fill" style="width:${(cnt/maxCnt*100).toFixed(0)}%"></div>
+                </div>
+              </div>
+            </div>`).join('')}
+          ${!sortedIngs.length ? '<div style="color:var(--t3);font-size:13px;">No data yet</div>' : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-card" style="margin-bottom:20px;">
+      <div class="dc-title">Most Ordered by Category</div>
+      <div class="cat-grid">
+        ${CATS.map(cat => {
+          const data = catCounts[cat];
+          if (!data) return `<div class="cat-card"><div class="cat-name">${cat}</div><div style="color:var(--t3);font-size:12px;">No orders yet</div></div>`;
+          const sorted = Object.entries(data).sort((a,b) => b[1]-a[1]);
+          return `<div class="cat-card">
+            <div class="cat-name">${cat}</div>
+            ${sorted.slice(0,4).map(([n,c]) => `
+              <div class="cat-item">
+                <span class="cat-item-name">${esc(n)}</span>
+                <span class="cat-item-cnt">${c}×</span>
+              </div>`).join('')}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  drawChart();
+}
+
+function monthlyRevData(n) {
+  const now = new Date();
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (n - 1 - i), 1);
+    const label = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+    const total = revenue.filter(r => {
+      const rd = new Date(r.date);
+      return rd.getFullYear() === d.getFullYear() && rd.getMonth() === d.getMonth();
+    }).reduce((s, r) => s + r.amount, 0);
+    return { label, total };
+  });
+}
+
+function drawChart() {
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById('revenue-chart');
+    if (!canvas) return;
+    const data = monthlyRevData(6);
+    const ctx  = canvas.getContext('2d');
+    const dpr  = window.devicePixelRatio || 1;
+    const W    = canvas.parentElement.clientWidth - 40;
+    const H    = 200;
+
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+
+    const maxVal = Math.max(...data.map(d => d.total), PRICE);
+    const PAD    = { t: 24, b: 38, l: 46, r: 12 };
+    const cW     = W - PAD.l - PAD.r;
+    const cH     = H - PAD.t - PAD.b;
+    const bW     = (cW / data.length) * 0.55;
+    const gap    = (cW / data.length) * 0.45;
+
+    // Grid lines + y-labels
+    ctx.font = `10px Inter, system-ui, sans-serif`;
+    for (let i = 0; i <= 4; i++) {
+      const y = PAD.t + (cH / 4) * i;
+      ctx.strokeStyle = '#1e2d45'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + cW, y); ctx.stroke();
+      ctx.fillStyle = '#475569'; ctx.textAlign = 'right';
+      ctx.fillText('$' + Math.round(maxVal * (1 - i / 4)), PAD.l - 6, y + 4);
+    }
+
+    // Bars
+    data.forEach((d, i) => {
+      const bH = d.total > 0 ? (d.total / maxVal) * cH : 0;
+      const x  = PAD.l + i * (cW / data.length) + gap / 2;
+      const y  = PAD.t + cH - bH;
+
+      // Empty bar placeholder
+      ctx.fillStyle = '#1a2235';
+      roundRect(ctx, x, PAD.t, bW, cH, 4);
+      ctx.fill();
+
+      if (bH > 0) {
+        const grad = ctx.createLinearGradient(0, y, 0, y + bH);
+        grad.addColorStop(0, '#8b5cf6');
+        grad.addColorStop(1, '#6d28d9');
+        ctx.fillStyle = grad;
+        roundRect(ctx, x, y, bW, bH, 4);
+        ctx.fill();
+
+        // Value label
+        if (bH > 18) {
+          ctx.fillStyle = '#fff'; ctx.font = 'bold 9px Inter, system-ui, sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText('$' + d.total, x + bW / 2, y + bH / 2 + 4);
+        } else {
+          ctx.fillStyle = '#a78bfa'; ctx.font = 'bold 9px Inter, system-ui, sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText('$' + d.total, x + bW / 2, y - 4);
+        }
+      }
+
+      // X label
+      ctx.fillStyle = '#475569'; ctx.font = '10px Inter, system-ui, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(d.label, x + bW / 2, H - 8);
+    });
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+// ═══════════════════════════════════════════════════════
+// VIEW SWITCHING
+// ═══════════════════════════════════════════════════════
+function switchView(view, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`${view}-view`).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  if (view === 'dashboard') renderDash();
+}
+
+// ═══════════════════════════════════════════════════════
+// MODAL HELPERS
+// ═══════════════════════════════════════════════════════
+function openModal(id)  { document.getElementById(id).classList.add('on'); }
+function closeModal(id) { document.getElementById(id).classList.remove('on'); }
+function overlayClose(e, id) { if (e.target.id === id) closeModal(id); }
+
+// Close on ESC
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.overlay.on').forEach(o => o.classList.remove('on'));
+  }
+});
+
+// Close typeahead on outside click
+document.addEventListener('click', e => {
+  const s = document.getElementById('ing-search');
+  const d = document.getElementById('ta-drop');
+  if (!s?.contains(e.target) && !d?.contains(e.target)) d?.classList.remove('open');
+});
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+function toast(msg, type = 'ok') {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.animation = 'tout .3s ease forwards'; setTimeout(() => t.remove(), 320); }, 3200);
+}
+
+// ═══════════════════════════════════════════════════════
+// FORMAT HELPERS
+// ═══════════════════════════════════════════════════════
+function fmtDate(d) {
+  return new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+function fmtDateTime(d) {
+  return new Date(d).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' });
+}
+function fmtTotal(mg) {
+  return mg >= 1000 ? `${(mg/1000).toFixed(1)} g` : `${mg % 1 === 0 ? mg : mg.toFixed(2)} mg`;
+}
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+function init() {
+  load();
+  if (!orders.length) seedData();
+  checkRenewals();
+  renderBoard();
+  // Check renewals every 5 minutes; re-render board every 10 min for countdown accuracy
+  setInterval(checkRenewals, 5 * 60 * 1000);
+  setInterval(renderBoard, 10 * 60 * 1000);
+  // Redraw chart on resize
+  window.addEventListener('resize', () => {
+    if (document.getElementById('dashboard-view').classList.contains('active')) drawChart();
+  });
+}
+
+init();
+</script>
+</body>
+</html>
